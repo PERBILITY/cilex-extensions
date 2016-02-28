@@ -11,9 +11,6 @@ class LocalStore
 {
     const DATA_DIR = 'data';
     const LOCK_FILE = 'lock';
-    const DIRECTORIES = [
-        self::DATA_DIR
-    ];
     
     private $path;
     private $locked = false;
@@ -54,7 +51,7 @@ class LocalStore
     
     public function init()
     {
-        foreach (static::DIRECTORIES as $dir) {
+        foreach ($this->getDirectoryNames() as $dir) {
             mkdir($this->path . '/' . $dir);
         }
         
@@ -126,6 +123,11 @@ class LocalStore
         $this->locked = false;
         fclose($handle);
         $this->log->debug("Released lock");
+    }
+    
+    protected function getDirectoryNames()
+    {
+        return [static::DATA_DIR];
     }
     
     private function setValue($key, $value)
