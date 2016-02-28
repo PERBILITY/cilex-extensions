@@ -1,5 +1,5 @@
 <?php
-namespace Perbility\ResourceHubClient;
+namespace Perbility\Cilex\Store;
 
 use DirectoryIterator;
 use Exception;
