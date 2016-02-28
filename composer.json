@@ -1,0 +1,22 @@
+{
+    "name": "perbility/cilex-extensions",
+    "description": "Useful stuff for writing command line utilities",
+    "repositories": [],
+    "require": {
+        "cilex/cilex": "~1.1",
+        "monolog/monolog": "~1.12",
+        "symfony/process": "~2.7",
+        "symfony/yaml": "~2.7"
+    },
+    "authors": [
+        {
+            "name": "Marc Woerlein",
+            "email": "marc.woerlein@perbility.de"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Perbility\\Cilex\\" : "src/"
+        }
+    }
+}
