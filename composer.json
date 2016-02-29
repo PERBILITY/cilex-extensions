@@ -1,19 +1,15 @@
 {
     "name": "perbility/cilex-extensions",
     "description": "Useful stuff for writing command line utilities",
-    "repositories": [
-        {
-            "type": "git",
-            "url": "https://github.com/PERBILITY/cilex-extensions.git"
-        }
-    ],
     "require": {
-        "cilex/cilex": "~1.1",
-        "monolog/monolog": "~1.12",
-        "symfony/process": "~2.7",
+        "psr/log": "~1.0",
         "symfony/yaml": "~2.7"
     },
     "authors": [
+        {
+            "name": "Benjamin Zikarsky",
+            "email": "benjamin.zikarsky@perbility.de"
+        },
         {
             "name": "Marc Woerlein",
             "email": "marc.woerlein@perbility.de"
