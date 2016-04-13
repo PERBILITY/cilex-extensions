@@ -14,6 +14,8 @@ use Symfony\Component\Yaml\Yaml;
  */
 class LocalStore
 {
+    const SERVICE_ID = 'store';
+    
     const DATA_DIR = 'data';
     const LOCK_FILE = 'lock';
     
