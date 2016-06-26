@@ -3,8 +3,10 @@ namespace Perbility\Cilex\Provider;
 
 use Cilex\Application;
 use Cilex\ServiceProviderInterface;
+use Guzzle\Http\Client;
 use Monolog\Handler\HipChatHandler;
 use Monolog\Logger;
+use Perbility\Cilex\Handler\GuzzleHipChatHandler;
 use Perbility\Cilex\Logger\TargetMappingLogger;
 use Psr\Log\InvalidArgumentException;
 use Psr\Log\NullLogger;
@@ -46,7 +48,8 @@ class HipChatMonologServiceProvider implements ServiceProviderInterface
                     'useSSL' => true,
                     'format' => 'text',
                     'host' => 'api.hipchat.com',
-                    'version' => HipChatHandler::API_V2
+                    'version' => HipChatHandler::API_V2,
+                    'guzzle' => false,
                 ];
                 
                 if (isset($roomConfigs['_default'])) {
@@ -60,21 +63,65 @@ class HipChatMonologServiceProvider implements ServiceProviderInterface
                     if (!isset($roomConfig['room']) || !isset($roomConfig['token'])) {
                         throw new InvalidArgumentException('missing room/token configuration');
                     }
-                    $logger->pushHandler(new HipChatHandler(
-                        $roomConfig['token'],
-                        $roomConfig['room'],
-                        $roomConfig['name'],
-                        $roomConfig['notify'],
-                        $roomConfig['level'],
-                        $roomConfig['bubble'],
-                        $roomConfig['useSSL'],
-                        $roomConfig['format'],
-                        $roomConfig['host'],
-                        $roomConfig['version']
-                    ));
+                    if (isset($roomConfig['guzzle']) && is_array($roomConfig['guzzle'])) {
+                        $logger->pushHandler(new GuzzleHipChatHandler(
+                            new Client('', $this->prepareGuzzleOptions($roomConfig['guzzle'])),
+                            $roomConfig['token'],
+                            $roomConfig['room'],
+                            $roomConfig['name'],
+                            $roomConfig['notify'],
+                            $roomConfig['level'],
+                            $roomConfig['bubble'],
+                            $roomConfig['useSSL'],
+                            $roomConfig['format'],
+                            $roomConfig['host'],
+                            $roomConfig['version']
+                        ));
+                    } else {
+                        $logger->pushHandler(new HipChatHandler(
+                            $roomConfig['token'],
+                            $roomConfig['room'],
+                            $roomConfig['name'],
+                            $roomConfig['notify'],
+                            $roomConfig['level'],
+                            $roomConfig['bubble'],
+                            $roomConfig['useSSL'],
+                            $roomConfig['format'],
+                            $roomConfig['host'],
+                            $roomConfig['version']
+                        ));
+                    }
                     $log->addLogger($logger, $roomConfig['targets']);
                 }
             }
         );
+    }
+
+    /**
+     * @param mixed[] $config
+     *
+     * @return mixed[]
+     */
+    protected function prepareGuzzleOptions(array $config)
+    {
+        $options = [];
+
+        // add curl proxy options
+        if (count($config['proxy']) && $config['proxy']['host']) {
+            $curlOptions = [CURLOPT_PROXY => $config['proxy']['host']];
+
+            if ($config['proxy']['port']) {
+                $curlOptions[CURLOPT_PROXYPORT] = $config['proxy']['port'];
+            }
+
+            $options['curl.options'] = $curlOptions;
+        }
+
+        // add ssl config
+        if ($config['verify_ssl'] === false) {
+            $options['ssl.certificate_authority'] = false;
+        }
+
+        return $options;
     }
 }
