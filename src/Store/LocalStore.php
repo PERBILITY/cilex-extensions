@@ -20,14 +20,14 @@ class LocalStore
     const LOCK_FILE = 'lock';
     
     /** @var string */
-    private $path;
+    protected $path;
+    
+    /** @var LoggerInterface */
+    protected $log;
     
     /** @var resource */
     private $lockHandle;
     
-    /** @var LoggerInterface */
-    private $log;
-
     /**
      * @param string $path
      * @param LoggerInterface $log
