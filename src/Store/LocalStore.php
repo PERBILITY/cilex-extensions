@@ -54,6 +54,14 @@ class LocalStore
     }
     
     /**
+     * @return string
+     */
+    public function getPath()
+    {
+        return $this->path;
+    }
+    
+    /**
      * removes all data from store
      */
     public function clear()
