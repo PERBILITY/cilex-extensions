@@ -3,7 +3,7 @@ namespace Perbility\Cilex\Config;
 
 /**
  * @author Marc Wörlein <marc.woerlein@perbility.de>
- * @package Config
+ * @package Perbility\Cilex\Config
  */
 class ConfigException extends \Exception
 {

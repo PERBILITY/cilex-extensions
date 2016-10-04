@@ -2,8 +2,8 @@
 namespace Perbility\Cilex\Store;
 
 use DirectoryIterator;
-use Exception;
 use DateTime;
+use Perbility\Cilex\Config\ConfigException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Yaml\Yaml;
 
@@ -32,12 +32,12 @@ class LocalStore
      * @param string $path
      * @param LoggerInterface $log
      *
-     * @throws Exception
+     * @throws ConfigException
      */
     public function __construct($path, LoggerInterface $log)
     {
         if (!is_writable($path)) {
-            throw new Exception("Path $path is not writable");
+            throw new ConfigException("Path $path is not writable");
         }
         
         $this->path = $path;
@@ -109,13 +109,11 @@ class LocalStore
      * @param string $key
      * @param mixed $value
      *
-     * @throws Exception if store is not initialized
+     * @throws StoreNotInitializedException if store is not initialized
      */
     public function set($key, $value)
     {
-        if (!$this->isInitialized()) {
-            throw new Exception("Local store is not initialized");
-        }
+        $this->assertInitialized();
         $this->setValue($key, $value);
     }
     
@@ -124,13 +122,11 @@ class LocalStore
      * @param mixed $default
      * @return mixed
      * 
-     * @throws Exception if store is not initialized
+     * @throws StoreNotInitializedException if store is not initialized
      */
     public function get($key, $default = null)
     {
-        if (!$this->isInitialized()) {
-            throw new Exception("Local store is not initialized");
-        }
+        $this->assertInitialized();
         return $this->getValue($key, $default);
     }
 
@@ -138,14 +134,12 @@ class LocalStore
      * Locks the store exclusive
      * @param bool $nonblocking
      *
-     * @throws Exception if store is not initialized
-     * @throws Exception if lock cannot be acquired
+     * @throws StoreNotInitializedException if store is not initialized
+     * @throws LockException if lock cannot be acquired
      */
     public function lock($nonblocking = false)
     {
-        if (!$this->isInitialized()) {
-            throw new Exception("Local store is not initialized");
-        }
+        $this->assertInitialized();
         
         if (null !== $this->lockHandle) {
             return;
@@ -153,7 +147,7 @@ class LocalStore
         
         $handle = fopen($this->path . '/' . self::LOCK_FILE, 'r+');
         if (!flock($handle, $nonblocking ? LOCK_EX|LOCK_NB : LOCK_EX)) {
-            throw new Exception("Lock failed");
+            throw new LockException("Lock failed");
         }
         
         $this->lockHandle = $handle;
@@ -163,21 +157,19 @@ class LocalStore
     /**
      * Release exclusiv lock
      * 
-     * @throws Exception if store is not initialized
-     * @throws Exception if lock cannot be released
+     * @throws StoreNotInitializedException if store is not initialized
+     * @throws LockException if lock cannot be released
      */
     public function unlock()
     {
-        if (!$this->isInitialized()) {
-            throw new Exception("Local store is not initialized");
-        }
+        $this->assertInitialized();
         
         if (null === $this->lockHandle) {
             return;
         }
         
         if (!flock($this->lockHandle, LOCK_UN)) {
-            throw new Exception("Unlock failed");
+            throw new LockException("Unlock failed");
         }
         
         fclose($this->lockHandle);
@@ -228,5 +220,17 @@ class LocalStore
             return $default;
         }
         return Yaml::parse(file_get_contents($file));
+    }
+    
+    /**
+     * @param string|null $message
+     *
+     * @throws StoreNotInitializedException
+     */
+    protected function assertInitialized($message = null)
+    {
+        if (!$this->isInitialized()) {
+            throw new StoreNotInitializedException($message);
+        }
     }
 }
