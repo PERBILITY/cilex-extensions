@@ -4,7 +4,10 @@ namespace Perbility\Cilex\Provider;
 use Cilex\Application;
 use Cilex\ServiceProviderInterface;
 use CMDISP\MonologMicrosoftTeams\TeamsLogHandler;
+use Guzzle\Http\Client;
 use Monolog\Logger;
+use Perbility\Cilex\Handler\GuzzleTeamsLogHandler;
+use Perbility\Cilex\Logger\TargetMappingLogger;
 use Psr\Log\NullLogger;
 
 /**
@@ -13,7 +16,7 @@ use Psr\Log\NullLogger;
  * @author Sven Hüßner <sven.huessner@perbility.de>
  * @package Perbility\Cilex\Provider
  */
-class MsTeamsMonologServiceProvider implements ServiceProviderInterface
+class MsTeamsMonologServiceProvider extends AbstractMonologServiceProvider implements ServiceProviderInterface
 {
     /**
      * Registers services on the given app.
@@ -29,7 +32,7 @@ class MsTeamsMonologServiceProvider implements ServiceProviderInterface
                     return new NullLogger();
                 }
                 
-                $log = new Logger('msteams');
+                $log = new TargetMappingLogger();
                 $app['msteams.configure']($log);
                 return $log;
             }
@@ -37,7 +40,7 @@ class MsTeamsMonologServiceProvider implements ServiceProviderInterface
         
         // Define handlers for the above created logger and store them as configurations
         $app['msteams.configure'] = $app->protect(
-            function (Logger $logger) use ($app) {
+            function (TargetMappingLogger $targetLogger) use ($app) {
                 $webhookConfigs = $app['msteams.webhooks'];
                 
                 // Handler defaults
@@ -50,14 +53,29 @@ class MsTeamsMonologServiceProvider implements ServiceProviderInterface
                 // Create handlers for the logger according to config
                 foreach ($webhookConfigs as $webhookConfig) {
                     $webhookConfig += $defaults;
+                    $logger = new Logger('hcm');
                     
-                    $logger->pushHandler(
-                        new TeamsLogHandler(
-                            $webhookConfig['url'],
-                            Logger::toMonologLevel($webhookConfig['level']),
-                            $webhookConfig['bubble']
-                        )
-                    );
+                    if (isset($webhookConfig["guzzle"]) && is_array($webhookConfig["guzzle"])) {
+                        // For clusters behind a proxy we need a Guzzle handler
+                        $logger->pushHandler(
+                            new GuzzleTeamsLogHandler(
+                                new Client('', $this->prepareGuzzleOptions($webhookConfig["guzzle"])),
+                                $webhookConfig['url'],
+                                Logger::toMonologLevel($webhookConfig['level']),
+                                $webhookConfig['bubble']
+                            )
+                        );
+                    } else {
+                        $logger->pushHandler(
+                            new TeamsLogHandler(
+                                $webhookConfig['url'],
+                                Logger::toMonologLevel($webhookConfig['level']),
+                                $webhookConfig['bubble']
+                            )
+                        );
+                    }
+    
+                    $targetLogger->addLogger($logger, $webhookConfig['targets']);
                 }
             }
         );

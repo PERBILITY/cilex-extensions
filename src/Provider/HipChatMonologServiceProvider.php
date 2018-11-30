@@ -15,7 +15,7 @@ use Psr\Log\NullLogger;
  * @author Marc Wörlein <marc.woerlein@perbility.de>
  * @package Perbility\Cilex\Provider
  */
-class HipChatMonologServiceProvider implements ServiceProviderInterface
+class HipChatMonologServiceProvider extends AbstractMonologServiceProvider implements ServiceProviderInterface
 {
     /**
      * Registers services on the given app.
@@ -95,33 +95,5 @@ class HipChatMonologServiceProvider implements ServiceProviderInterface
                 }
             }
         );
-    }
-
-    /**
-     * @param mixed[] $config
-     *
-     * @return mixed[]
-     */
-    protected function prepareGuzzleOptions(array $config)
-    {
-        $options = [];
-
-        // add curl proxy options
-        if (count($config['proxy']) && $config['proxy']['host']) {
-            $curlOptions = [CURLOPT_PROXY => $config['proxy']['host']];
-
-            if ($config['proxy']['port']) {
-                $curlOptions[CURLOPT_PROXYPORT] = $config['proxy']['port'];
-            }
-
-            $options['curl.options'] = $curlOptions;
-        }
-
-        // add ssl config
-        if ($config['verify_ssl'] === false) {
-            $options['ssl.certificate_authority'] = false;
-        }
-
-        return $options;
     }
 }
